@@ -18,12 +18,19 @@ class ChimeTime
   def whole_hour?
     quarters == 4
   end
+
+  def ==(b)
+    hours == b.hours &&
+      quarters == b.quarters
+  end
 end
 
 class BellTower
   include MidiUtilities
 
-  def initialize(@channel = 0)
+  def initialize(@channel = 0, alarm_time = Time.now)
+    @alarm_chime_time = ChimeTime.new alarm_time
+
     PortMidi.start
 
     device_id = PortMidi.get_default_midi_output_device_id
@@ -39,7 +46,7 @@ class BellTower
       chime_time.hours.times { ring MidiNotes::HOUR, 1.4 }
     end
 
-    bim_bam 32, 0.9, 12
+    grand_ringing if chime_time == @alarm_chime_time
 
     PortMidi.stop
   end
@@ -55,12 +62,48 @@ class BellTower
     @output.write([note_off(note, 0, @channel)])
   end
 
-  private def bim_bam(base_note, interval, times)
-    times.times do
+  private def bim_bam(base_note, interval, times = nil)
+    bim_bam_proc = -> do
       ring base_note + 2, interval
       ring base_note, interval
     end
+
+    if times
+      times.times &bim_bam_proc
+    else
+      loop &bim_bam_proc
+    end
+  end
+
+  private def grand_ringing
+    channels = [] of Channel(Int32)
+
+    4.times do |i|
+      channel = Channel(Int32).new
+      channels << channel
+
+      spawn do
+        sleep i * 6
+        bim_bam 32 + (i * 7), 0.9 - (i * 0.15), nil
+
+        channel.send 0
+      end
+    end
+
+    # wait for the fibers to finish (although they will never finish)
+    channels.each {|c| c.receive }
   end
 end
 
-BellTower.new.chime(Time.now)
+alarm_time = Time.new(2000, 1, 1, 21, 30) # only hour and minute are relevant
+puts "Current time " + Time.now.to_s("%I:%M")
+puts "Alarm set to " + alarm_time.to_s("%I:%M")
+
+loop do
+  minute = Time.now.minute
+  wait_minutes = 15 - (minute % 15)
+  puts "Next chime in #{wait_minutes} minutes"
+  sleep wait_minutes * 60
+
+  BellTower.new(0, alarm_time).chime(Time.now)
+end
