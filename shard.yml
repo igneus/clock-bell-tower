@@ -1,0 +1,8 @@
+name: clock-bell-tower
+license: GNU/GPL 3.0
+crystal: 0.23.1
+version: 0.0.0
+
+dependencies:
+  portmidi:
+    github: stygian-phrygian/portmidi

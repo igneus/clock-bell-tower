@@ -1,0 +1,6 @@
+version: 1.0
+shards:
+  portmidi:
+    github: stygian-phrygian/portmidi
+    commit: ed4e36ac6d9ce76290c22f85e6dc4196015ff917
+
