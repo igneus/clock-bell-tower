@@ -11,7 +11,7 @@ class ChimeTime
   end
 
   def quarters
-    qrtrs = (@time.minute.to_f / 60 * 4).round.to_i
+    qrtrs = ((@time.minute.to_f / 60) * 4).round.to_i
     qrtrs == 0 ? 4 : qrtrs
   end
 
@@ -33,11 +33,11 @@ class BellTower
   def chime(time)
     chime_time = ChimeTime.new(time)
 
+    chime_time.quarters.times { ring MidiNotes::QUARTER, 1.2 }
     if chime_time.whole_hour?
-      chime_time.quarters.times { ring MidiNotes::QUARTER, 1.2 }
+      sleep 0.2
+      chime_time.hours.times { ring MidiNotes::HOUR, 1.4 }
     end
-    sleep 0.2
-    chime_time.hours.times { ring MidiNotes::HOUR, 1.4 }
 
     bim_bam 32, 0.9, 12
 
