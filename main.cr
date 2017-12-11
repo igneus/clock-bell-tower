@@ -28,13 +28,8 @@ end
 class BellTower
   include MidiUtilities
 
-  def initialize(@channel = 0, alarm_time = Time.now)
+  def initialize(@output : PortMidi::MidiOutputStream, @channel = 0, alarm_time = Time.now)
     @alarm_chime_time = ChimeTime.new alarm_time
-
-    PortMidi.start
-
-    device_id = PortMidi.get_default_midi_output_device_id
-    @output = PortMidi::MidiOutputStream.new device_id
   end
 
   def chime(time)
@@ -47,8 +42,6 @@ class BellTower
     end
 
     grand_ringing if chime_time == @alarm_chime_time
-
-    PortMidi.stop
   end
 
   module MidiNotes
@@ -99,11 +92,18 @@ alarm_time = Time.new(2000, 1, 1, 21, 30) # only hour and minute are relevant
 puts "Current time " + Time.now.to_s("%I:%M")
 puts "Alarm set to " + alarm_time.to_s("%I:%M")
 
+PortMidi.start
+device_id = PortMidi.get_default_midi_output_device_id
+output = PortMidi::MidiOutputStream.new device_id
+belltower = BellTower.new(output, 0, alarm_time)
+
 loop do
   minute = Time.now.minute
   wait_minutes = 15 - (minute % 15)
   puts "Next chime in #{wait_minutes} minutes"
   sleep wait_minutes * 60
 
-  BellTower.new(0, alarm_time).chime(Time.now)
+  belltower.chime(Time.now)
 end
+
+PortMidi.stop
