@@ -1,6 +1,4 @@
-# "Clock Bell Tower"
-
-Bell tower chimes
+MIDI Bell tower chimes + alarm clock
 
 ## Requirements
 
